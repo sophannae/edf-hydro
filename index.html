@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>⚡ EDF Usines Navigation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --primary: #0066ff;
+            --primary-dark: #0052cc;
+            --accent: #00d4ff;
+            --accent-dark: #00a8cc;
+            --success: #00d084;
+            --bg: #0f0f1e;
+            --surface: #1a1a2e;
+            --surface-light: #25293e;
+            --text: #ffffff;
+            --text-secondary: #a0a0a8;
+            --border: #2d2d44;
+            --danger: #ff4d6d;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--bg);
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, #0052cc 100%);
+            padding: max(16px, env(safe-area-inset-top)) 20px 20px;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0, 102, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 12px;
+            opacity: 0.85;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ===== FILTERS ===== */
+        .filters-section {
+            background: var(--surface);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .filter-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .filter-group.full {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--accent);
+            letter-spacing: 0.8px;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .filter-select {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2300d4ff' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 32px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        .filter-select:hover {
+            border-color: var(--primary);
+        }
+
+        .search-input {
+            background: var(--surface-light);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 12px 10px 36px;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.2s;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a0a0a8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 10px center;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        /* ===== RESULTS INFO ===== */
+        .results-info {
+            background: var(--surface-light);
+            padding: 10px 20px;
+            font-size: 12px;
+            color: var(--accent);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        /* ===== SITES LIST ===== */
+        .sites-list {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0;
+        }
+
+        .site-card {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 16px;
+            transition: all 0.2s;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .site-card:active {
+            background: var(--surface-light);
+        }
+
+        .site-info {
+            min-width: 0;
+        }
+
+        .site-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+
+        .site-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .badge {
+            background: var(--surface-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .badge.type-barrage {
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--accent);
+        }
+
+        .badge.type-usine {
+            background: rgba(0, 208, 132, 0.1);
+            color: var(--success);
+        }
+
+        .badge.type-satellite {
+            background: rgba(255, 77, 109, 0.1);
+            color: var(--danger);
+        }
+
+        .badge.type-default {
+            background: rgba(160, 160, 168, 0.1);
+            color: var(--text-secondary);
+        }
+
+        .site-ville {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .nav-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .nav-btn.waze {
+            background: linear-gradient(135deg, #4dd4ff, #00a8cc);
+            color: #000;
+        }
+
+        .nav-btn.waze:active {
+            transform: scale(0.95);
+            box-shadow: 0 4px 12px rgba(77, 212, 255, 0.3);
+        }
+
+        .nav-btn.google {
+            background: linear-gradient(135deg, #4285F4, #EA4335);
+            color: white;
+        }
+
+        .nav-btn.google:active {
+            transform: scale(0.95);
+            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .empty-state-subtext {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        /* ===== SCROLLBAR ===== */
+        .sites-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sites-list::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        .sites-list::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .sites-list::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        .filters-section::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .filters-section::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 480px) {
+            .filter-group {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .site-card {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-buttons {
+                justify-content: flex-start;
+            }
+        }
+
+        /* ===== SAFE AREA ===== */
+        .safe-bottom {
+            height: max(0px, env(safe-area-inset-bottom));
+            background: var(--surface);
+            flex-shrink: 0;
+        }
+    </style>
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚡ EDF Usines</h1>
+            <p>Navigation Offline</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <div class="filter-group">
+                <div class="full">
+                    <label class="filter-label">🔍 Recherche</label>
+                    <input 
+                        type="text" 
+                        id="search" 
+                        class="search-input" 
+                        placeholder="Nom du site, ville..."
+                    >
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <div>
+                    <label class="filter-label">🏔️ Vallée</label>
+                    <select id="valley" class="filter-select">
+                        <option value="">-- Toutes --</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="filter-label">🏢 GU</label>
+                    <select id="gu" class="filter-select">
+                        <option value="">-- Toutes --</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Info -->
+        <div class="results-info" id="results-info">📍 170 sites</div>
+
+        <!-- Sites List -->
+        <div class="sites-list" id="sites-list"></div>
+
+        <!-- Safe Area Bottom -->
+        <div class="safe-bottom"></div>
+    </div>
+
+    <script>
+        // ===== DATA =====
+        const allSites = [{"vallée": "DORDOGNE", "gu": "AIGLE (L')", "site": "RES LA BARAQUE", "type": "Satellite", "adresse": "1 Route de Spontour\n15200 Chalvignac", "ville": "CHALVIGNAC", "lat": 45.235959, "lon": 2.219665}, {"vallée": "DORDOGNE", "gu": "AIGLE (L')", "site": "Barrage de la Luzège", "type": "Barrage", "adresse": "1 Barrage de la Luzège\n19160 Saint-Pantaléon-de-Lapleau", "ville": "Saint-Pantaléon-de-Lapleau", "lat": 45.309702, "lon": 2.178149}, {"vallée": "DORDOGNE", "gu": "AIGLE (L')", "site": "AIGLE (L')", "type": "Tête de GU", "adresse": "D16, Barrage de l'Aigle", "ville": "Soursac", "lat": 45.243272, "lon": 2.224425}, {"vallée": "DORDOGNE", "gu": "AIGLE (L')", "site": "POSTE RTE DU BREUIL", "type": "Usine", "adresse": "POSTE RTE DU BREUIL\n 11 Le Breuil", "ville": "SOURSAC", "lat": 45.245756, "lon": 2.214214}, {"vallée": "DORDOGNE", "gu": "AIGLE (L')", "site": "LOCAL VIGIE DE L'AIGLE", "type": "Barrage", "adresse": "BARRAGE DE L'AIGLE-LOCAL VIGIE- 15200 CHALVIGNAC\nLE BREUIL\nBARRAGE L'AIGLE-LOCAL VIGIE", "ville": "Soursac", "lat": 45.243113, "lon": 2.223266}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "Prise d'eau barrage du Taurons", "type": "Prise d'eau", "adresse": "Loudie, 15270 Trémouille\n ", "ville": "tremouille", "lat": 45.402472, "lon": 2.686947}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "Barrage du Gabacut", "type": "Barrage", "adresse": "LOCAL CABACUT MOULIN DE CHABROL", "ville": "SAINT GENES CHAMPESPE", "lat": 45.364882, "lon": 2.646166}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "Barrage de Vaussaire", "type": "Barrage", "adresse": " 4 Jambe du Bois\n", "ville": "Champs-sur-Tarentaine-Marchal", "lat": 45.365824, "lon": 2.645307}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "AUZERETTE", "type": "Usine", "adresse": "1 Bois de la Cantine", "ville": "Champs-sur-Tarentaine-Marchal", "lat": 45.364882, "lon": 2.646166}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "BORT", "type": "Tête de GU", "adresse": "Barrage de Bort les orgue\n1141 AVENUE VICTOR HUGO bâtiment BAT E", "ville": "Bort-les-Orgues", "lat": 45.412391, "lon": 2.500149}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "Local Vigie De Bort", "type": "Barrage", "adresse": "MODEM PANDA \nBARRAGE BORT LES ORGUES\nUSINE BORT LES ORGUES", "ville": "Bort-les-Orgues", "lat": 45.413333, "lon": 2.4975}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "Barrage déversoir en Y lac de Lastioulles", "type": "Barrage", "adresse": "BARRAGE LASTIOULE", "ville": "CONDAT", "lat": 45.397673, "lon": 2.675885}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "NEUVIC-D'USSEL", "type": "Usine", "adresse": "\n1 ROUTE DE L USINE ", "ville": "Sérandon", "lat": 45.347417, "lon": 2.349816}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "Barrage lac de la Crégut", "type": "Barrage", "adresse": "Pont Canal La Cregut -15270 TREMOUILLE/", "ville": "tremouille", "lat": 45.364882, "lon": 2.646166}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "Atelier Annexe de maintenance", "type": "Satellite", "adresse": "1091 Avenue de la gare", "ville": "BORT LES ORGUES", "lat": 45.41006, "lon": 4.0}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "VAL-BENEYTE", "type": "Usine", "adresse": " 2510 ROUTE DE L ANCIEN PRIEURE ", "ville": "Roche-le-Peyroux", "lat": 45.415955, "lon": 2.372155}, {"vallée": "DORDOGNE", "gu": "BORT-LES-ORGUES", "site": "POSTE RTE DE COINDRE", "type": "Satellite", "adresse": " COINDRE\nPOSTE RTE DE COINDRE", "ville": "Saint-Amandin", "lat": 45.353538, "lon": 2.666697}, {"vallée": "LOT TRUYERE", "gu": "BROMMAT", "site": "BOUSQUET", "type": "Usine", "adresse": "Le Bousquet", "ville": "Argences-en-Aubrac", "lat": 44.824044, "lon": 2.741864}, {"vallée": "LOT TRUYERE", "gu": "BROMMAT", "site": "Services généraux et communs usine de Brommat 1", "type": "Tête de GU", "adresse": "Brommat\nEDF RUEYRES\n 100 Route de Valcaylès", "ville": "Brommat", "lat": 44.778449, "lon": 2.689684}, {"vallée": "LOT TRUYERE", "gu": "BROMMAT", "site": "Barrage de Labarthe", "type": "Barrage", "adresse": "Brommat\nEDF RUEYRES\n 100 Route de Valcaylès", "ville": "Brommat", "lat": 44.778449, "lon": 2.689684}, {"vallée": "LOT TRUYERE", "gu": "BROMMAT", "site": "SARRANS", "type": "Usine", "adresse": "USINE SARRANS \nBARRAGE DE SARRANS\nUSINE BROMMAT", "ville": "Brommat", "lat": 44.828667, "lon": 2.739729}, {"vallée": "LOT TRUYERE", "gu": "BROMMAT", "site": "Barrage de Mels", "type": "Barrage", "adresse": "PONT MELS\nRTE CADENE\nBARRAGE MELS", "ville": "SAINTE-GENEVIEVE-SUR-ARGENCE", "lat": 44.813519, "lon": 2.73732}, {"vallée": "LOT TRUYERE", "gu": "BROMMAT", "site": "Poste RTE de Rueyres", "type": "Usine", "adresse": "Poste RTE de Rueyres, 12600 Brommat", "ville": "Brommat", "lat": 44.778412, "lon": 2.689788}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "PRISE EAU MONTVERT", "type": "Prise d'eau", "adresse": "PRISE EAU MONTVERT", "ville": "Laroquebrou", "lat": 44.976561, "lon": 2.162387}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "SAINT-ETIENNE-CANTALES", "type": "Usine", "adresse": "4 rue aster", "ville": "Saint-Étienne-Cantalès", "lat": 44.945356, "lon": 2.218536}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "AURILLAC GEH", "type": "Usine", "adresse": "14 Avenue du Garric\n14 AV GARRIC\nPARC ACTIVITES TRONQUIERES - GARRIC 14", "ville": "Aurillac", "lat": 44.899822, "lon": 2.431265}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "Barrage de l'Escaumels 2", "type": "Barrage", "adresse": "1236 Route d'Escaumels ", "ville": "Sousceyrac-en-Quercy", "lat": 44.955818, "lon": 2.032234}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "LAVAL-DE-CERE I", "type": "Tête de GU", "adresse": "Lieu-dit Marconcelles", "ville": "Laval-de-Cère", "lat": 44.953276, "lon": 1.949515}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "Barrage de Montvert", "type": "Barrage", "adresse": "le Plan Incliné", "ville": "Montvert", "lat": 44.976823, "lon": 2.162906}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "NEPES", "type": "Usine", "adresse": "Route de Saint-Étienne ", "ville": "Laroquebrou", "lat": 44.959015, "lon": 2.204243}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "BRUGALE", "type": "Usine", "adresse": " 5 Route de Lavaur Haute bâtiment M17", "ville": "Laval-de-Cère", "lat": 44.94172, "lon": 1.916516}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "LAMATIVIE", "type": "Usine", "adresse": "2 CHEMIN DE L USINE ", "ville": "Camps-Saint-Mathurin-Léobazel", "lat": 44.98259, "lon": 2.032536}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "Local Vigie SAINT-ETIENNE-CANTALES", "type": "Satellite", "adresse": "2 Rue Aster", "ville": "Saint-Étienne-Cantalès", "lat": 44.945811, "lon": 2.219666}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "Barrage de St Etienne-Cantalès", "type": "Barrage", "adresse": "4 rue aster", "ville": "Saint-Étienne-Cantalès", "lat": 44.945356, "lon": 2.218536}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "Barrage prise d'eau de Candes 1", "type": "Barrage", "adresse": " 180 Route du Barrage de Candes", "ville": "Sousceyrac-en-Quercy", "lat": 44.951738, "lon": 1.977374}, {"vallée": "DORDOGNE", "gu": "CERE", "site": "Barrage de Camps", "type": "Barrage", "adresse": "5577 Route de la garde de Lamativie", "ville": "Sousceyrac-en-Quercy", "lat": 44.980275, "lon": 2.025193}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "PREVENCHERES", "type": "Usine", "adresse": "Barrage de Puylaurent", "ville": "La Bastide-Puylaurent", "lat": 44.530211, "lon": 3.886902}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "Barrage du Rachas", "type": "Barrage", "adresse": " Lieu dit le Rachas ", "ville": " Prévenchères", "lat": 44.507153, "lon": 3.92362}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "Barrage de Malarce", "type": "Barrage", "adresse": "Malarce-sur-la-Thines, Auvergne-Rhône-Alpes\nD113", "ville": "Malarce-sur-la-Thines", "lat": 44.449339, "lon": 4.053608}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "Barrage de Sainte-Marguerite", "type": "Barrage", "adresse": "521 Imp. des Chenevières", "ville": "Pied-de-Borne", "lat": 44.471723, "lon": 3.988269}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "BEYSSAC", "type": "Usine", "adresse": "BEYSSAC SALLE DE COMMANDE- 48800 PIED DE BORNE\nBEYSSAC\nBEYSSAC SALLE DE COMMANDE", "ville": "Pied-de-Borne", "lat": 44.484, "lon": 3.969}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "Prise d'eau de Palhères", "type": "Prise d'eau", "adresse": "PE PALHERES \n", "ville": "Pourcharesses", "lat": 44.435941, "lon": 3.917025}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "Barrage de Puylaurent", "type": "Barrage", "adresse": "USINE PUYLAURENT-48250 LA BASTIDE PUYLAURENT\nPUYLAURENT\nUSINE PUYLAURENT", "ville": "La Bastide-Puylaurent", "lat": 44.530862, "lon": 3.886525}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "PIED-DE-BORNE", "type": "Tête de GU", "adresse": " 210  Route de Sainte-Marguerite", "ville": "Pied-de-Borne", "lat": 44.478873, "lon": 3.985817}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "SALELLES (LES)", "type": "Usine", "adresse": "\nCHE USINE EDF\nLES SALEILLES", "ville": "Les Salelles", "lat": 44.426382, "lon": 4.109502}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "LAFIGERE", "type": "Usine", "adresse": "3236 Rte de Beaujeu ", "ville": "Malarce-sur-la-Thines", "lat": 44.447442, "lon": 4.03784}, {"vallée": "LOIRE ARDECHE", "gu": "CHASSEZAC", "site": "Barrage de Villefort", "type": "Barrage", "adresse": "BARRAGE-48800 VILLEFORT\nRTE BARRAGE\nBARRAGE VILLEFORT", "ville": "Altier", "lat": 44.453317, "lon": 3.931992}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "MARCILLAC", "type": "Usine", "adresse": "4 USINE DE NOUGEIN ", "ville": "Marcillac-la-Croisille", "lat": 45.215389, "lon": 2.037349}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "HAUTEFAGE", "type": "Usine", "adresse": "1962 route de la MARONNE\n", "ville": "Hautefage", "lat": 45.071623, "lon": 1.975832}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "SAINT-GENIEZ-O-MERLE", "type": "Usine", "adresse": "Le Gourdaloup", "ville": "Saint-Geniez-ô-Merle", "lat": 45.070853, "lon": 2.067976}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "Barrage de dérivation usine de St-Geniez", "type": "Barrage", "adresse": "BARRAGE\nFEYT\nFeytBARRAGE", "ville": "Servières-le-Château", "lat": 45.143125, "lon": 2.027079}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "ENCHANET", "type": "Usine", "adresse": "1 Les Côtes du Barrage", "ville": "Pleaux", "lat": 45.081564, "lon": 2.194204}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "Barrage d'Argentat", "type": "Barrage", "adresse": "7 Route du Chastang", "ville": "Argentat-sur-Dordogne", "lat": 45.103591, "lon": 1.954029}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "Local vigie du barrage de Marcillac", "type": "Satellite", "adresse": "BARRAGE-19320 MARCILLAC LA CROISILLE LOCAL VIGIE\nLA VALETTE\nBARRAGE LA VALETTE", "ville": "Saint-Pardoux-la-Croisille", "lat": 45.247754, "lon": 1.995489}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "Local Vigie ENCHANET", "type": "Satellite", "adresse": "D61", "ville": "Arnac", "lat": 45.080851, "lon": 2.193407}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "CHASTANG (LE)", "type": "Tête de GU", "adresse": "Servières-le-Château\nCHASTANG", "ville": "Servières-le-Château", "lat": 45.151784, "lon": 2.011556}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "Local vigie Hautefage", "type": "Satellite", "adresse": "1060 route du Barrage", "ville": "Hautefage", "lat": 45.064754, "lon": 1.997157}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "Local vigie du barrage de Chastang", "type": "Satellite", "adresse": "LOCAL VIGIE-BARRAGE \nLE CHASTANG\nBARRAGE CHASTANG", "ville": "Saint-Martin-la-Méanne", "lat": 45.151388, "lon": 2.007987}, {"vallée": "DORDOGNE", "gu": "CHASTANG", "site": "ARGENTAT", "type": "Usine", "adresse": "7 Rte du Chastang", "ville": "Argentat-sur-Dordogne", "lat": 45.104166, "lon": 1.953874}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "CHALARD", "type": "Usine", "adresse": "Le Chalard", "ville": "Olliergues", "lat": 45.669468, "lon": 3.644039}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "SAINT-NECTAIRE", "type": "Usine", "adresse": "LES GRANGES", "ville": "Saint-Nectaire", "lat": 45.568846, "lon": 2.978105}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Barrage de Queuille", "type": "Barrage", "adresse": "USINE QUEUILLE (LE BARRAGE)- 63390 ST GERVAIS DAUVERGNE\nLE BARRAGE\nUSINE QUEUILLE", "ville": "Saint-Gervais-d'Auvergne", "lat": 45.980539, "lon": 2.869711}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Poste RTE Montluçon", "type": "Satellite", "adresse": "78 Rue du Gour du Puy\nPoste RTE", "ville": "Montluçon", "lat": 46.319767, "lon": 2.605942}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "MONTFERMY", "type": "Usine", "adresse": "USINE MONTFERMY", "ville": "Montfermy", "lat": 45.882412, "lon": 2.797505}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "PRAT (LE)", "type": "Usine", "adresse": "USINE LE PRAT", "ville": "Teillet-Argenty", "lat": 46.256011, "lon": 2.556239}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Barrage des Fades", "type": "Barrage", "adresse": "D62, Les Fades", "ville": "Les Ancizes-Comp", "lat": 45.971777, "lon": 2.797567}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "FADES (LES)", "type": "Usine", "adresse": "Usine Les Fades\nLes Saignoles", "ville": "Queuille", "lat": 45.984647, "lon": 2.816396}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "BEX SAINT GERVAIS", "type": "Tête de GU", "adresse": "BEX SAINT GERVAIS\n30 Rue Joliot Curie\n", "ville": "Saint-Gervais-d'Auvergne", "lat": 46.026044, "lon": 2.819358}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Prise d'eau de Pontgibaud", "type": "Prise d'eau", "adresse": "Pontgibaud\nPrise d'eau Pontgibaud", "ville": "Pontgibaud", "lat": 45.832221, "lon": 2.85311}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Prise d'eau de PRADES", "type": "Prise d'eau", "adresse": "Les Prades", "ville": "Domaize", "lat": 45.702632, "lon": 3.552483}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "TEILLET-ARGENTY", "type": "Usine", "adresse": "16 Lieu Dit Barrage de Rochebut", "ville": "Mazirat", "lat": 46.241459, "lon": 2.535291}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Barrage de Rochebut", "type": "Barrage", "adresse": "16 Lieu Dit Barrage de Rochebut\nLOCAL VIGIE DE ROCHEBUT", "ville": "Mazirat", "lat": 46.241017, "lon": 2.534636}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "USINE SHEMA de Thiers", "type": "Barrage", "adresse": "\nR INDUSTRIE\nUSINE THIERS", "ville": "Thiers", "lat": 45.861365, "lon": 3.558982}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "CHATEL-MONTAGNE", "type": "Usine", "adresse": " 1 la Centrale", "ville": "Châtel-Montagne", "lat": 46.12597, "lon": 3.681185}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Local vigie Les Fades", "type": "Satellite", "adresse": "LES FADES\nANCIZES", "ville": "Les Ancizes-Comps", "lat": 45.972778, "lon": 2.798056}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Barrage de Mayet de Montagne", "type": "Barrage", "adresse": "0RTE CHATEL\nBarrage EDF de Mayet de Montagne / Saint Clément\nLieu dit Canivet bâtiment 0B 30", "ville": "Le Mayet-de-Montagne", "lat": 46.086114, "lon": 3.687607}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "SAUVIAT", "type": "Usine", "adresse": "2 Rue de la Serre\nCENTRALE HYDRO LA SERRE", "ville": "Saint-Flour-l'Étang", "lat": 45.42, "lon": 57.1}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Usine RTE de Thiers", "type": "Barrage", "adresse": "GROUPEMENT USINES \n53 Avenue de la 1ère Armée \n", "ville": "Thiers", "lat": 45.854998, "lon": 3.529477}, {"vallée": "LOIRE ARDECHE", "gu": "CLERMONT", "site": "Sirène Les Sagnolles", "type": "Satellite", "adresse": "Sirène Les Sagnolles", "ville": "Queuille", "lat": 45.984038, "lon": 2.815278}, {"vallée": "CENTRE-OUEST", "gu": "EGUZON", "site": "ROCHE-BAT-L'AIGUE (LA)", "type": "Barrage-usine", "adresse": "25 Route de La Roche Bat l'Aigue\n36200 Badecon-le-Pin", "ville": "Badecon-le-Pin", "lat": 46.530091, "lon": 1.582024}, {"vallée": "CENTRE-OUEST", "gu": "EGUZON", "site": "CHEZELLES", "type": "Barrage-usine", "adresse": "Rte du Barrage", "ville": "Le Bourg-d'Hem", "lat": 46.281833, "lon": 1.834451}, {"vallée": "CENTRE-OUEST", "gu": "EGUZON", "site": "Barrage de Roche-bat-l'Aigue", "type": "Barrage-usine", "adresse": "25 Route de La Roche Bat l'Aigue\n36200 Badecon-le-Pin", "ville": "Badecon-le-Pin", "lat": 46.530067, "lon": 1.582033}, {"vallée": "CENTRE-OUEST", "gu": "EGUZON", "site": "CHAMPSANGLARD", "type": "Barrage-usine", "adresse": "USINE DE CHAMPSANGLARD", "ville": "Champsanglard", "lat": 46.261085, "lon": 1.876865}, {"vallée": "CENTRE-OUEST", "gu": "EGUZON", "site": "Barrage de l'Age-sur-Creuse", "type": "Barrage-usine", "adresse": "Barrage de l'Age\nBARRAGE AGE SUR CREUSE", "ville": "La Celle-Dunoise", "lat": 46.302082, "lon": 1.805355}, {"vallée": "CENTRE-OUEST", "gu": "EGUZON", "site": "AGE-SUR-CREUSE (L')", "type": "Barrage-usine", "adresse": "\nBARRAGE DE L'AGE, Brg de l'Âge, 23800 La Celle-Dunoise", "ville": "La Celle-Dunoise", "lat": 46.302161, "lon": 1.805771}, {"vallée": "CENTRE-OUEST", "gu": "EGUZON", "site": "EGUZON", "type": "Tête de GU", "adresse": "4 R PETITES COTES", "ville": "Cuzion", "lat": 46.454789, "lon": 1.613473}, {"vallée": "CENTRE-OUEST", "gu": "EGUZON", "site": "Barrage de Champsanglard", "type": "Barrage-usine", "adresse": "Barrage de Champsanglard\nBARRAGE DE CHAMPSANGLARD", "ville": "Champsanglard", "lat": 46.261077, "lon": 1.876862}, {"vallée": "CENTRE-OUEST", "gu": "EGUZON", "site": "ROCHE-AU-MOINE", "type": "Barrage-usine", "adresse": "Les Vergnats", "ville": "Gargilesse-Dampierre", "lat": 46.50236, "lon": 1.582206}, {"vallée": "LOT TRUYERE", "gu": "GRANDVAL", "site": "LANAU", "type": "Usine", "adresse": "1 lieu-dit Barrage de Lanau", "ville": "Chaudes-Aigues", "lat": 44.89112, "lon": 3.002775}, {"vallée": "LOT TRUYERE", "gu": "GRANDVAL", "site": "Barrage de Ganivet", "type": "Barrage", "adresse": "927 ROUTE DU LAC", "ville": "Lachamp-Ribennes", "lat": 44.647165, "lon": 3.409211}, {"vallée": "LOT TRUYERE", "gu": "GRANDVAL", "site": "Serverette", "type": "Satellite", "adresse": "Ouvrage d'amené Serverette\nRue Basse\n", "ville": "Serverette", "lat": 44.70433, "lon": 3.385555}, {"vallée": "LOT TRUYERE", "gu": "GRANDVAL", "site": "Barrage du Moulinet", "type": "Barrage", "adresse": "BARRAGE MOULINET\nVILLAGE\nMoulinet", "ville": "Le Buisson", "lat": 44.62334, "lon": 3.264173}, {"vallée": "LOT TRUYERE", "gu": "GRANDVAL", "site": "GRANDVAL", "type": "Tête de GU", "adresse": "2 Route de l'Energie - Grandval - Lavastrie", "ville": "Neuvéglise-sur-Truyère", "lat": 44.922138, "lon": 3.074039}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "PONT-DE-LIGNON 2", "type": "Usine", "adresse": "Rue des René bâtiment BA 0235\n", "ville": "Saint-Maurice-de-Lignon", "lat": 45.255738, "lon": 4.151566}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "PONT-DE-LIGNON 1", "type": "Tête de GU", "adresse": " Rue de la Lavande", "ville": "Saint-Maurice-de-Lignon", "lat": 45.24619, "lon": 4.146076}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "VILLEREST", "type": "Usine", "adresse": "Cotes Napart bâtiment \n\n", "ville": "Commelle-Vernay", "lat": 45.986913, "lon": 4.049448}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "GRANGENT", "type": "Usine", "adresse": "USINE GRANGENT\n667 Rte du Barrage\n42170 Chambles\n\n", "ville": "Chambles", "lat": 45.468354, "lon": 4.246939}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "Local vigie de GRANGENT", "type": "Satellite", "adresse": "\nGRANGENT\nLOCAL VIGIE DE GRANGENT", "ville": "Saint-Just-Saint-Rambert", "lat": 45.468935, "lon": 4.249497}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "Barrage de Pontabouland", "type": "Barrage", "adresse": "Barrage Pontabouland\n42990 ST GEORGES EN COUZAN\n", "ville": "Saint-Georges-en-Couzan", "lat": 45.689338, "lon": 3.923732}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "VERSILHAC", "type": "Usine", "adresse": "Usine de Versilhac\nSuc des Arnas\n43200 Yssingeaux\n", "ville": "Yssingeaux", "lat": 45.161415, "lon": 4.187394}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "Barrage de Villerest", "type": "Prise d'eau", "adresse": "Cotes Napart bâtiment BARRAGE DE VILLEREST\n", "ville": "Commelle-Vernay", "lat": 45.986784, "lon": 4.049437}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "VENDETS", "type": "Usine", "adresse": " Route de l'Île", "ville": "Grazac", "lat": 45.223305, "lon": 4.177911}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "RORY", "type": "Usine", "adresse": "USINE RORY\n2740 Route de Vaux", "ville": "Saint-Georges-en-Couzan", "lat": 45.702409, "lon": 3.950582}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "Prise d'eau de Lavalette", "type": "Prise d'eau", "adresse": "PRISE D'EAU DU BARRAGE DE LAVALETTE - 43200 GRAZAC\nLA CHAZOTTE\nPRISE EAU DU BARRAGE LAVALETTE", "ville": "Lapte", "lat": 45.149963, "lon": 4.210022}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "ANCE-DU-NORD", "type": "Usine", "adresse": "USINE ANCE DU NORD\nRte de Moulas\n43530 Tiranges\n", "ville": "Tiranges", "lat": 45.262603, "lon": 4.004175}, {"vallée": "LOIRE ARDECHE", "gu": "LOIRE", "site": "SAINT-MARTIN", "type": "Usine", "adresse": "USINE ST MARTIN\n2576 Route des Barrages", "ville": "Saint-Georges-en-Couzan", "lat": 45.715541, "lon": 3.971417}, {"vallée": "LOT TRUYERE", "gu": "LUZECH", "site": "LUZECH", "type": "Tête de GU", "adresse": "12 Quai Emile Gironde", "ville": "Luzech", "lat": 44.48147, "lon": 1.28401}, {"vallée": "LOT TRUYERE", "gu": "LUZECH", "site": "CAJARC", "type": "Usine", "adresse": "La Combelle", "ville": "Cajarc", "lat": 44.476131, "lon": 1.831587}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "Barrage de Vassivière", "type": "Barrage", "adresse": "D3A2", "ville": "Royère-de-Vassivière", "lat": 45.813951, "lon": 1.851338}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "LANGLERET", "type": "Usine", "adresse": "USINE LANGLERET\n", "ville": "Bujaleuf", "lat": 45.79611, "lon": 1.598134}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "CHATRE (LA)", "type": "Usine", "adresse": "15 Rte du Thaurion", "ville": "Saint-Pierre-Chérignat", "lat": 45.979879, "lon": 1.577383}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "PEYRAT-LE-CHATEAU", "type": "Tête de GU", "adresse": "1515 Route du Mazet", "ville": "Peyrat-le-Château", "lat": 45.801945, "lon": 1.802077}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "Prise d'eau de Lavaud-Gelade", "type": "Prise d'eau", "adresse": " BOURG\n\n Lavaud Gelade (Prise d'Eau) Vergnolas 23460 ROYERE DE VASSIVIER", "ville": "Royère-de-Vassivière", "lat": 45.834034, "lon": 1.953875}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "CHAUVAN", "type": "Usine", "adresse": "21 Chauvan", "ville": "Saint-Priest-Taurion", "lat": 45.906322, "lon": 1.411485}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "Barrage de Langleret", "type": "Barrage", "adresse": "Bujaleuf\nBarrage Langleret", "ville": "Bujaleuf", "lat": 45.795619, "lon": 1.629821}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "Local vigie de Lavaud-Gelade", "type": "Satellite", "adresse": "D59", "ville": "Royère-de-Vassivière", "lat": 45.85515, "lon": 1.95311}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "BUSSY", "type": "Usine", "adresse": "29 Rte de la Vienne", "ville": "Eymoutiers", "lat": 45.750361, "lon": 1.707196}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "CHATELUS", "type": "Usine", "adresse": "Les Riveaux", "ville": "Châtelus-le-Marcheix", "lat": 46.001455, "lon": 1.616259}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "BUJALEUF", "type": "Usine", "adresse": "Bujaleuf", "ville": "Bujaleuf", "lat": 45.80227, "lon": 1.61439}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "Barrage de l'Etroit", "type": "Barrage", "adresse": "Saint-Pierre-Chérignat", "ville": "Saint-Pierre-Chérignat", "lat": 45.988963, "lon": 1.596034}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "Barrage de la Roche Talamie", "type": "Barrage", "adresse": "BARRAGE ROCHE-TALAMIE", "ville": "Châtelus-le-Marcheix", "lat": 46.008755, "lon": 1.620334}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "Barrage de Chammet", "type": "Barrage", "adresse": "Chammet\nBARRAGE DE CHAMMET", "ville": "Faux-la-Montagne", "lat": 45.721333, "lon": 1.98752}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "Prise d'eau du barrage du Chammet", "type": "Prise d'eau", "adresse": "Faux-la-Montagne\nPRISE D'EAU DE CHAMMET", "ville": "Faux-la-Montagne", "lat": 45.749, "lon": 1.938}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "FAUX-LA-MONTAGNE", "type": "Usine", "adresse": "12 Rte de l'Usine", "ville": "Faux-la-Montagne", "lat": 45.765606, "lon": 1.93586}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "MARTINEIX", "type": "Usine", "adresse": "La Plane", "ville": "Saint-Julien-le-Petit", "lat": 45.816443, "lon": 1.674888}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "CONFOLENT", "type": "Usine", "adresse": "CONFOLENT", "ville": "Felletin", "lat": 45.928964, "lon": 2.170117}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "Barrage de Martineix", "type": "Barrage", "adresse": "Bujaleuf\nBarrage Martineix", "ville": "Bujaleuf", "lat": 45.816554, "lon": 1.67541}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "VILLEJOUBERT", "type": "Usine", "adresse": "Lieu Dit Villejoubert", "ville": "Saint-Denis-des-Murs", "lat": 45.795248, "lon": 1.568889}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "SAINT-MARC", "type": "Usine", "adresse": "LIEU DIT SAINT MARC bâtiment BAT B", "ville": "Saint-Martin-Terressus", "lat": 45.927008, "lon": 1.455243}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "MONT-LARRON", "type": "Usine", "adresse": "1 Moulin de Larron", "ville": "Saint-Julien-le-Petit", "lat": 45.819602, "lon": 1.714057}, {"vallée": "CENTRE-OUEST", "gu": "MAULDE TAURION", "site": "FLEIX", "type": "Usine", "adresse": "Usine Fleix", "ville": "Bujaleuf", "lat": 45.814806, "lon": 1.652583}, {"vallée": "LOT TRUYERE", "gu": "MONTEZIC", "site": "MONTEZIC", "type": "Tête de GU", "adresse": "Lou Roc de Lou", "ville": "Montézic", "lat": 44.737472, "lon": 2.6435}, {"vallée": "LOT TRUYERE", "gu": "MONTEZIC", "site": "Barrage du Goul", "type": "Barrage", "adresse": "BARRAGE DU GOUL\nPONS\nBARRAGE GOUL", "ville": "Saint-Hippolyte", "lat": 44.726249, "lon": 2.5593}, {"vallée": "LOT TRUYERE", "gu": "MONTEZIC", "site": "Sirène 4 Campredon", "type": "Satellite", "adresse": "CAMPREDON-12140 CAMPOURIEZ\nCAMPREDON\nCAMPREDON-", "ville": "Campouriez", "lat": 44.665322, "lon": 2.581439}, {"vallée": "LOT TRUYERE", "gu": "MONTEZIC", "site": "COUESQUE", "type": "Usine", "adresse": "5 Route de l'Usine", "ville": "Saint-Hippolyte", "lat": 44.695332, "lon": 2.581566}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "Barrage de Poutes", "type": "Barrage", "adresse": "BARRAGE DE POUTES- 43580 ALLEYRAS\nPOUTES\nBARRAGE POUTES", "ville": "Alleyras", "lat": 44.940191, "lon": 3.673812}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "Barrage de Pouzas", "type": "Barrage", "adresse": "POUZAS PCA LA VALETTE- 43580 ST PREJET D'ALLIER\nLA VALETTE\nPOUZAS PCA LA VALETTE", "ville": "Saint-Préjet-d'Allier", "lat": 44.921884, "lon": 3.618052}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "Prise d'eau de la Palisse", "type": "Prise d'eau", "adresse": "PRISE EAU LA PALISSE\n632 Route du Lac d'Issarlès", "ville": "Cros-de-Géorand", "lat": 44.784196, "lon": 4.097462}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "Luchadou", "type": "Usine", "adresse": "LUCHADOU- PCA- 43170 CUBELLES\nLUCHADOU\nLUCHADOU PCA", "ville": "Cubelles", "lat": 44.994729, "lon": 3.558607}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "Seuil et passe à poissons Pont de la Borie", "type": "Prise d'eau", "adresse": " PONT DE LA BORIE\nSTATION DE MESURE DE PONT LA BORIE", "ville": "Le Lac-d'Issarlès", "lat": 44.819931, "lon": 4.048274}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "LAVOUTE-SUR-LOIRE", "type": "Usine", "adresse": "LAVOUTE-SUR-LOIRE", "ville": "Lavoûte-sur-Loire", "lat": 45.112009, "lon": 3.895366}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "BÂTIMENT ADMINISTRATIF", "type": "Usine", "adresse": "38 Avenue Pierre Farigoule\nEDF BÂTIMENT ADMINISTRATIF", "ville": "Brives-Charensac", "lat": 45.038674, "lon": 3.932052}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "MONISTROL-D'ALLIER", "type": "Usine", "adresse": "Rue des Jacquets ", "ville": "Monistrol-d'Allier", "lat": 44.967717, "lon": 3.646041}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "Prise d'eau du barrage de la VEYRADERE", "type": "Prise d'eau", "adresse": "Le Béage\nPRISE EAU BARRAGE DE LA VEYRADEYRE", "ville": "Le Béage", "lat": 44.844351, "lon": 4.097553}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "Services généraux et communs de Brives-Charensac", "type": "Usine", "adresse": "LOT ALLIER STADH-38, AV PIERRE FARIGOULE - 43700 BRIVES CHARENSAC\n38 AV PIERRE FARIGOULE\nLOT ALLIER STADH-38 AV PIERRE FARIGOULE", "ville": "Brives-Charensac", "lat": 45.038674, "lon": 3.932052}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "PONT-DE-VEYRIERES", "type": "Usine", "adresse": " 1275 ROUTE DE LA FONTAULIERE \n", "ville": " Meyras", "lat": 44.690007, "lon": 4.271879}, {"vallée": "LOIRE ARDECHE", "gu": "MONTPEZAT", "site": "MONTPEZAT", "type": "Tête de GU", "adresse": "260 Allee de la Centrale", "ville": "Montpezat-sous-Bauzon", "lat": 44.703411, "lon": 4.230018}, {"vallée": "CENTRE-OUEST", "gu": "ROCHE (LA)", "site": "CHARDES", "type": "Usine", "adresse": "Rue de Chardes", "ville": "L'Isle-Jourdain", "lat": 46.242593, "lon": 0.684636}, {"vallée": "CENTRE-OUEST", "gu": "ROCHE (LA)", "site": "CHATELLERAULT", "type": "Usine", "adresse": "1 All. du Jardin du Directeur", "ville": "Châtellerault", "lat": 46.811192, "lon": 0.535184}, {"vallée": "CENTRE-OUEST", "gu": "ROCHE (LA)", "site": "Barrage de la Roche", "type": "Barrage-usine", "adresse": "6 RUE DE LA ROCHE", "ville": "MILLAC", "lat": 46.225815, "lon": 0.680033}, {"vallée": "CENTRE-OUEST", "gu": "ROCHE (LA)", "site": "Barrage de Chatellerault", "type": "Barrage", "adresse": "1 All. du Jardin du Directeur", "ville": "Châtellerault", "lat": 46.811254, "lon": 0.535285}, {"vallée": "CENTRE-OUEST", "gu": "ROCHE (LA)", "site": "Ouvrage usine (GC et hydraulique) de Chatellerault", "type": "Barrage-usine", "adresse": "3 Rue Clement Krebs\n3 R CLEMENT KREBS\nBARRAGE CHATELLERAULT", "ville": "Châtellerault", "lat": 46.814029, "lon": 0.536212}, {"vallée": "CENTRE-OUEST", "gu": "ROCHE (LA)", "site": "ROCHE (LA)", "type": "Tête de GU", "adresse": "La Roche", "ville": "Millac", "lat": 46.225892, "lon": 0.679822}, {"vallée": "CENTRE-OUEST", "gu": "ROCHE (LA)", "site": "JOUSSEAU", "type": "Usine", "adresse": "Brg de Jousseau", "ville": "Millac", "lat": 46.169727, "lon": 0.673425}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "CAMBEYRAC", "type": "Barrage-usine", "adresse": "D34E", "ville": "Entraygues-sur-Truyère", "lat": 44.65453, "lon": 2.57342}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "STATION LIMNIMETRIQUE ESPALLION", "type": "Usine", "adresse": "STATION LIMNIMETRIQUE-QUAI DU LOT- 12150 ESPALION\nSTATION LIMNIMETRIQUE ESPALLION", "ville": "Espalion", "lat": 44.522315, "lon": 2.763008}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "Barrage de Cambeyrac", "type": "Barrage", "adresse": "226 Barrage de Cambeyrac", "ville": "Entraygues-sur-Truyère", "lat": 44.654677, "lon": 2.573526}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "Barrage de Maury", "type": "Barrage", "adresse": "4399 Rte du Nayrac", "ville": "Florentin-la-Capelle", "lat": 44.66235, "lon": 2.663211}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "Barrage de Castelnau", "type": "Barrage", "adresse": "chemin Al mas de las Combes", "ville": "Lassouts", "lat": 44.505712, "lon": 2.872907}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "CASTELNAU", "type": "Usine", "adresse": "1534 Route de Lassouts\n12500 Castelnau-de-Mandailles", "ville": "Lassouts", "lat": 44.50528, "lon": 2.874}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "GOLINHAC", "type": "Tête de GU", "adresse": "D135", "ville": "Florentin-la-Capelle", "lat": 44.60568, "lon": 2.605087}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "Entraygues", "type": "Usine", "adresse": "13-7 Av. de Rodiez", "ville": "Entraygues-sur-Truyère", "lat": 44.63765, "lon": 2.57051}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "Barrage de Golinhac", "type": "Barrage", "adresse": " Route des Rives du Lot ", "ville": "Golinhac", "lat": 44.57824, "lon": 2.63752}, {"vallée": "LOT TRUYERE", "gu": "VALLEE D'OLT", "site": "LARDIT", "type": "Usine", "adresse": "67 Route d'Entraygues ", "ville": "Campouriez", "lat": 44.66267, "lon": 2.5827}, {"vallée": "DORDOGNE", "gu": "VEZERE", "site": "PEYRISSAC", "type": "Usine", "adresse": "0A LA VEZERE ", "ville": "Affieux", "lat": 45.505911, "lon": 1.717028}, {"vallée": "DORDOGNE", "gu": "VEZERE", "site": "SAILLANT (LE)", "type": "Usine", "adresse": "1171 Rte du Barrage", "ville": "Voutezac", "lat": 45.285344, "lon": 1.463808}, {"vallée": "DORDOGNE", "gu": "VEZERE", "site": "Barrage de Viam", "type": "Barrage", "adresse": "0 LOUSSINE DES BOIS ", "ville": "Viam", "lat": 45.585228, "lon": 1.881246}, {"vallée": "DORDOGNE", "gu": "VEZERE", "site": "Barrage de Treignac", "type": "Barrage", "adresse": "Barrage de Treignac\nLes Bariousses", "ville": "Treignac", "lat": 45.553998, "lon": 1.813841}, {"vallée": "DORDOGNE", "gu": "VEZERE", "site": "TREIGNAC", "type": "Usine", "adresse": "17 Route de Chingeat", "ville": "Treignac", "lat": 45.534482, "lon": 1.759832}, {"vallée": "DORDOGNE", "gu": "VEZERE", "site": "MONCEAUX-LA-VIROLE", "type": "Tête de GU", "adresse": "1 cité EDF", "ville": "Lestards", "lat": 45.575754, "lon": 1.839319}];
+
+        // ===== STATE =====
+        let filters = {
+            search: '',
+            valley: '',
+            gu: ''
+        };
+
+        // ===== INIT =====
+        function init() {
+            populateSelects();
+            render();
+            setupEventListeners();
+        }
+
+        // ===== POPULATE SELECTS =====
+        function populateSelects() {
+            // Get unique valleys and GUs
+            const valleys = [...new Set(allSites.map(s => s.vallée))].sort();
+            const gus = [...new Set(allSites.map(s => s.gu))].sort();
+
+            const valleySelect = document.getElementById('valley');
+            const guSelect = document.getElementById('gu');
+
+            valleys.forEach(valley => {
+                const option = document.createElement('option');
+                option.value = valley;
+                option.textContent = valley;
+                valleySelect.appendChild(option);
+            });
+
+            gus.forEach(gu => {
+                const option = document.createElement('option');
+                option.value = gu;
+                option.textContent = gu;
+                guSelect.appendChild(option);
+            });
+        }
+
+        // ===== FILTER SITES =====
+        function getFilteredSites() {
+            return allSites.filter(site => {
+                const matchSearch = site.site.toLowerCase().includes(filters.search.toLowerCase()) ||
+                                   site.ville.toLowerCase().includes(filters.search.toLowerCase());
+                const matchValley = !filters.valley || site.vallée === filters.valley;
+                const matchGU = !filters.gu || site.gu === filters.gu;
+                return matchSearch && matchValley && matchGU;
+            });
+        }
+
+        // ===== RENDER =====
+        function render() {
+            const filtered = getFilteredSites();
+            const listEl = document.getElementById('sites-list');
+            const infoEl = document.getElementById('results-info');
+
+            infoEl.textContent = `📍 ${filtered.length} site${filtered.length > 1 ? 's' : ''}`;
+
+            listEl.innerHTML = '';
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🗺️</div>
+                        <div class="empty-state-text">Aucun site trouvé</div>
+                        <div class="empty-state-subtext">Essaye un autre filtre ou recherche</div>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(site => {
+                const wazeUrl = `waze://?ll=${site.lat},${site.lon}&navigate=yes`;
+                const mapsUrl = `https://maps.google.com/?q=${site.lat},${site.lon}`;
+
+                const typeClass = `type-${site.type.toLowerCase().replace(/[^a-z]/g, '') || 'default'}`;
+
+                const card = document.createElement('div');
+                card.className = 'site-card';
+                card.innerHTML = `
+                    <div class="site-info">
+                        <div class="site-name">${site.site}</div>
+                        <div class="site-meta">
+                            <span class="badge ${typeClass}">${site.type}</span>
+                        </div>
+                        <div class="site-ville">📍 ${site.ville}</div>
+                    </div>
+                    <div class="nav-buttons">
+                        <a href="${wazeUrl}" class="nav-btn waze" title="Waze" target="_blank">W</a>
+                        <a href="${mapsUrl}" class="nav-btn google" title="Google Maps" target="_blank">G</a>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        // ===== EVENT LISTENERS =====
+        function setupEventListeners() {
+            document.getElementById('search').addEventListener('input', (e) => {
+                filters.search = e.target.value;
+                render();
+            });
+
+            document.getElementById('valley').addEventListener('change', (e) => {
+                filters.valley = e.target.value;
+                render();
+            });
+
+            document.getElementById('gu').addEventListener('change', (e) => {
+                filters.gu = e.target.value;
+                render();
+            });
+        }
+
+        // ===== START =====
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+
+<script>
+/* Offline cache via Service Worker (GitHub Pages friendly) */
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+})();
+</script>
+
+</body>
+</html>
