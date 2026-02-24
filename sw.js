@@ -1,8 +1,10 @@
 /* EDF Hydro Offline - Service Worker */
-const CACHE_NAME = 'edf-hydro-offline-v1';
+const CACHE_NAME = 'edf-hydro-offline-v2';
 const ASSETS = [
   './',
   './index.html',
+      './assets/waze.png',
+      './assets/gmaps.png',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'

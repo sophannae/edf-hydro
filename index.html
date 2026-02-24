@@ -360,7 +360,51 @@
             background: var(--surface);
             flex-shrink: 0;
         }
-    </style>
+    
+/* --- PIMP: brand icons + favoris/historique --- */
+.navIcons{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:10px}
+.iconBtn{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.12);color:var(--text);padding:10px 12px;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer}
+.iconBtn:active{transform:scale(.98)}
+.navLink{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;border:1px solid rgba(255,255,255,.18);overflow:hidden;background:rgba(0,0,0,.12)}
+.navLink img{width:100%;height:100%;object-fit:cover}
+.starBtn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.12);cursor:pointer;font-size:18px}
+.starBtn.fav{background:rgba(255,215,0,.16);border-color:rgba(255,215,0,.35)}
+.modalOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;z-index:50}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,92vw);max-height:82vh;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;display:none;z-index:51}
+.modalHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.modalTitle{font-weight:900;font-size:16px}
+.closeBtn{border:0;background:transparent;color:var(--text);font-size:20px;cursor:pointer}
+.smallHint{color:var(--muted);font-size:12px;margin-top:4px}
+.histItem{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.histMeta{color:var(--muted);font-size:12px}
+
+
+.nav-btn{display:flex;align-items:center;justify-content:center}
+.nav-btn img{width:28px;height:28px}
+
+/* ===== PIMP v2: Tour + Mini-map ===== */
+.quickbar{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px;}
+.qb{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text);padding:10px 12px;border-radius:12px;font-weight:800;cursor:pointer}
+.qb:active{transform:scale(.99)}
+.modal .modalBody{max-height:70vh;overflow:auto}
+.listRow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.listRow:last-child{border-bottom:0}
+.badge2{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.18);font-size:11px;opacity:.9}
+.tourCtl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tourCtl button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text);padding:8px 10px;border-radius:10px;font-weight:800;cursor:pointer}
+.tourCtl button.danger{border-color:rgba(255,80,80,.35);color:#ffb3b3}
+.tourSummary{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.tourSummary .cardMini{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px 12px}
+.canvasWrap{background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.14);border-radius:14px;overflow:hidden}
+#miniMapCanvas{width:100%;height:340px;display:block;touch-action:none}
+.mapToolbar{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0;align-items:center}
+.mapToolbar select{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text);padding:10px 12px;border-radius:12px}
+.hint{opacity:.85;font-size:12px;line-height:1.35}
+.tourBtn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text);padding:0;border-radius:14px;width:44px;height:44px;font-weight:900;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.tourBtn.on{background:rgba(45,212,255,.22);border-color:rgba(45,212,255,.45)}
+/* ===== END PIMP v2 ===== */
+
+</style>
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -404,6 +448,13 @@
         <!-- Results Info -->
         <div class="results-info" id="results-info">📍 170 sites</div>
 
+        <div class="quickbar">
+            <button class="qb" id="btnOpenFavs">⭐ Favoris</button>
+            <button class="qb" id="btnOpenHist">🕘 Historique</button>
+            <button class="qb" id="btnOpenTour">🧭 Tournée</button>
+            <button class="qb" id="btnOpenMap">🗺️ Mini-map</button>
+        </div>
+
         <!-- Sites List -->
         <div class="sites-list" id="sites-list"></div>
 
@@ -424,9 +475,44 @@
 
         // ===== INIT =====
         function init() {
+            allSites.forEach((s, i) => s._id = i);
             populateSelects();
             render();
             setupEventListeners();
+        }
+
+
+        // ===== LOCAL STORAGE (Favoris + Historique) =====
+        const KEY_FAVS = 'edfHydroFavs_v1';
+        const KEY_HIST = 'edfHydroHist_v1';
+
+        const load = (k, d)=>{ try{ return JSON.parse(localStorage.getItem(k) || JSON.stringify(d)); }catch(e){ return d; } };
+        const save = (k, v)=>localStorage.setItem(k, JSON.stringify(v));
+
+        const getFavs = ()=> new Set(load(KEY_FAVS, []));
+        const setFavs = (set)=> save(KEY_FAVS, Array.from(set));
+
+        const getHist = ()=> load(KEY_HIST, []); // [{id, nav, t}]
+        const pushHist = (id, nav)=>{
+            const now = Date.now();
+            const h = getHist().filter(x => !(x.id===id && x.nav===nav));
+            h.unshift({id, nav, t: now});
+            save(KEY_HIST, h.slice(0,10));
+        };
+
+        const fmtTime = (ms)=>{
+            try{ return new Date(ms).toLocaleString(undefined,{weekday:'short', day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}); }
+            catch(e){ return ''; }
+        };
+
+        function openModal(id){
+            document.getElementById('modalOverlay').style.display='block';
+            document.getElementById(id).style.display='block';
+        }
+        function closeModals(){
+            document.getElementById('modalOverlay').style.display='none';
+            document.getElementById('modalFavs').style.display='none';
+            document.getElementById('modalHist').style.display='none';
         }
 
         // ===== POPULATE SELECTS =====
@@ -466,6 +552,7 @@
 
         // ===== RENDER =====
         function render() {
+            const favs = getFavs();
             const filtered = getFilteredSites();
             const listEl = document.getElementById('sites-list');
             const infoEl = document.getElementById('results-info');
@@ -486,6 +573,7 @@
             }
 
             filtered.forEach(site => {
+                const isFav = favs.has(site._id);
                 const wazeUrl = `waze://?ll=${site.lat},${site.lon}&navigate=yes`;
                 const mapsUrl = `https://maps.google.com/?q=${site.lat},${site.lon}`;
 
@@ -502,12 +590,69 @@
                         <div class="site-ville">📍 ${site.ville}</div>
                     </div>
                     <div class="nav-buttons">
-                        <a href="${wazeUrl}" class="nav-btn waze" title="Waze" target="_blank">W</a>
-                        <a href="${mapsUrl}" class="nav-btn google" title="Google Maps" target="_blank">G</a>
+                        <button class="starBtn ${isFav ? 'fav' : ''}" title="${isFav ? 'Retirer des favoris' : 'Ajouter aux favoris'}" data-fav="${site._id}">${isFav ? '★' : '☆'}</button>
+                        <a href="${wazeUrl}" class="nav-btn waze" title="Waze" target="_blank" data-nav="waze" data-id="${site._id}"><img src="assets/waze.png" alt="Waze"></a>
+                        <a href="${mapsUrl}" class="nav-btn google" title="Google Maps" target="_blank" data-nav="gmaps" data-id="${site._id}"><img src="assets/gmaps.png" alt="Google Maps"></a>
                     </div>
                 `;
                 listEl.appendChild(card);
             });
+        }
+
+
+
+        function siteById(id){
+            return allSites.find(s=>s._id===id);
+        }
+
+        function renderFavs(){
+            const favs = Array.from(getFavs());
+            const box = document.getElementById('favsList');
+            if(!favs.length){ box.innerHTML = '<div class="empty-state"><div class="empty-state-text">Aucun favori</div><div class="empty-state-subtext">Ajoute une ★ sur un site.</div></div>'; return; }
+            const items = favs.map(siteById).filter(Boolean);
+            box.innerHTML = items.map(site=>{
+                const wazeUrl = `waze://?ll=${site.lat},${site.lon}&navigate=yes`;
+                const mapsUrl = `https://maps.google.com/?q=${site.lat},${site.lon}`;
+                const typeClass = `type-${site.type.toLowerCase().replace(/[^a-z]/g, '') || 'default'}`;
+                return `
+                    <div class="site-card">
+                        <div class="site-info">
+                            <div class="site-name">${site.site}</div>
+                            <div class="site-meta"><span class="badge ${typeClass}">${site.type}</span></div>
+                            <div class="site-ville">📍 ${site.ville}</div>
+                        </div>
+                        <div class="nav-buttons">
+                            <button class="starBtn fav" data-fav="${site._id}" title="Retirer des favoris">★</button>
+                            <a href="${wazeUrl}" class="nav-btn waze" title="Waze" target="_blank" data-nav="waze" data-id="${site._id}"><img src="assets/waze.png" alt="Waze"></a>
+                            <a href="${mapsUrl}" class="nav-btn google" title="Google Maps" target="_blank" data-nav="gmaps" data-id="${site._id}"><img src="assets/gmaps.png" alt="Google Maps"></a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderHist(){
+            const h = getHist();
+            const box = document.getElementById('histList');
+            if(!h.length){ box.innerHTML = '<div class="empty-state"><div class="empty-state-text">Historique vide</div></div>'; return; }
+            box.innerHTML = h.map(x=>{
+                const site = siteById(x.id);
+                if(!site) return '';
+                const label = x.nav==='waze' ? 'Waze' : 'Google Maps';
+                const href = x.nav==='waze' ? `waze://?ll=${site.lat},${site.lon}&navigate=yes` : `https://maps.google.com/?q=${site.lat},${site.lon}`;
+                return `
+                    <div class="site-card">
+                        <div class="site-info">
+                            <div class="site-name">${site.site}</div>
+                            <div class="site-ville">📍 ${site.ville}</div>
+                            <div class="site-meta" style="margin-top:6px;color:var(--muted)">${label} • ${fmtTime(x.t)}</div>
+                        </div>
+                        <div class="nav-buttons">
+                            <a href="${href}" class="nav-btn ${x.nav==='waze'?'waze':'google'}" target="_blank" data-nav="${x.nav}" data-id="${site._id}">Ouvrir</a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         // ===== EVENT LISTENERS =====
@@ -526,9 +671,407 @@
                 filters.gu = e.target.value;
                 render();
             });
+
+            // Favoris / Historique
+            document.getElementById('btnFavs')?.addEventListener('click', ()=>{ renderFavs(); openModal('modalFavs'); });
+            document.getElementById('btnHist')?.addEventListener('click', ()=>{ renderHist(); openModal('modalHist'); });
+
+            // Close modals
+            document.getElementById('modalOverlay')?.addEventListener('click', closeModals);
+            document.querySelectorAll('[data-close]')?.forEach(b=>b.addEventListener('click', closeModals));
+
+            // Delegation: fav toggle + history tracking
+            document.addEventListener('click', (e)=>{
+                const favBtn = e.target.closest('[data-fav]');
+                if(favBtn){
+                    const id = Number(favBtn.getAttribute('data-fav'));
+                    const favs = getFavs();
+                    if(favs.has(id)) favs.delete(id); else favs.add(id);
+                    setFavs(favs);
+                    render();
+                    if(document.getElementById('modalFavs').style.display==='block') renderFavs();
+                    return;
+                }
+                const nav = e.target.closest('[data-nav][data-id]');
+                if(nav){
+                    pushHist(Number(nav.getAttribute('data-id')), nav.getAttribute('data-nav'));
+                }
+            });
+
         }
 
-        // ===== START =====
+        
+        // ===== TOUR (v2) =====
+        let tourOrder = loadList(KEY_TOUR);
+        let tour = new Set(tourOrder);
+
+        function syncTourFromOrder(){
+            tour = new Set(tourOrder);
+        }
+        function saveTour(){
+            saveList(KEY_TOUR, tourOrder);
+        }
+        function toggleTour(i){
+            i = Number(i);
+            if (tour.has(i)){
+                tourOrder = tourOrder.filter(x => x !== i);
+            } else {
+                tourOrder.push(i);
+            }
+            syncTourFromOrder();
+            saveTour();
+            render(); // refresh list buttons
+            if (isModalOpen('modalTour')) renderTour();
+        }
+
+        function haversineKm(a,b){
+            const R = 6371;
+            const toRad = d => d*Math.PI/180;
+            const dLat = toRad(b.lat - a.lat);
+            const dLon = toRad(b.lon - a.lon);
+            const lat1 = toRad(a.lat);
+            const lat2 = toRad(b.lat);
+            const s = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+            return 2*R*Math.asin(Math.min(1, Math.sqrt(s)));
+        }
+
+        function buildTourSegments(order){
+            const segs = [];
+            let total = 0;
+            for (let k=0;k<order.length-1;k++){
+                const A = allSites[order[k]];
+                const B = allSites[order[k+1]];
+                const d = haversineKm(A,B);
+                total += d;
+                segs.push({from:order[k], to:order[k+1], km:d});
+            }
+            return {segs, total};
+        }
+
+        function optimizeTourNearest(){
+            if (tourOrder.length <= 2) return;
+            const remaining = tourOrder.slice(1);
+            const ordered = [tourOrder[0]];
+            while (remaining.length){
+                const last = allSites[ordered[ordered.length-1]];
+                let bestIdx = 0;
+                let bestD = Infinity;
+                for (let i=0;i<remaining.length;i++){
+                    const cand = allSites[remaining[i]];
+                    const d = haversineKm(last, cand);
+                    if (d < bestD){ bestD = d; bestIdx = i; }
+                }
+                ordered.push(remaining.splice(bestIdx,1)[0]);
+            }
+            tourOrder = ordered;
+            syncTourFromOrder();
+            saveTour();
+            renderTour();
+            render();
+        }
+
+        function moveTourItem(i, dir){
+            const idx = tourOrder.indexOf(i);
+            if (idx < 0) return;
+            const j = idx + dir;
+            if (j < 0 || j >= tourOrder.length) return;
+            const tmp = tourOrder[idx];
+            tourOrder[idx] = tourOrder[j];
+            tourOrder[j] = tmp;
+            syncTourFromOrder();
+            saveTour();
+            renderTour();
+            render();
+        }
+
+        function clearTour(){
+            tourOrder = [];
+            syncTourFromOrder();
+            saveTour();
+            renderTour();
+            render();
+        }
+
+        function renderTour(){
+            const el = document.getElementById('tourList');
+            const sum = document.getElementById('tourSummary');
+            if (!el || !sum) return;
+
+            if (!tourOrder.length){
+                sum.innerHTML = '';
+                el.innerHTML = '<div class="smallHint" style="padding:10px 0">Aucun site dans la tournée pour le moment.</div>';
+                return;
+            }
+
+            const {segs, total} = buildTourSegments(tourOrder);
+
+            sum.innerHTML = `
+                <div class="cardMini"><b>${tourOrder.length}</b><div class="smallHint">sites</div></div>
+                <div class="cardMini"><b>${total.toFixed(1)} km</b><div class="smallHint">total (ordre actuel)</div></div>
+            `;
+
+            el.innerHTML = tourOrder.map((idx, n) => {
+                const s = allSites[idx];
+                const next = (n < tourOrder.length-1) ? segs[n].km : null;
+                return `
+                    <div class="listRow">
+                        <div>
+                            <div style="font-weight:900">${n+1}. ${escapeHtml(s.site)}</div>
+                            <div class="smallHint">📍 ${escapeHtml(s.ville)} • <span class="badge2">${escapeHtml(s.type)}</span></div>
+                            ${next !== null ? `<div class="smallHint">➡️ Vers suivant: <b>${next.toFixed(1)} km</b></div>` : `<div class="smallHint">🏁 Fin de tournée</div>`}
+                        </div>
+                        <div class="tourCtl">
+                            <button onclick="moveTourItem(${idx},-1)" title="Monter">↑</button>
+                            <button onclick="moveTourItem(${idx},+1)" title="Descendre">↓</button>
+                            <button class="danger" onclick="toggleTour(${idx})" title="Retirer">✕</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function tourToGMapsUrl(){
+            if (tourOrder.length < 2) return null;
+            const maxWaypoints = 23; // Google maps limit (approx)
+            const origin = allSites[tourOrder[0]];
+            const dest = allSites[tourOrder[tourOrder.length-1]];
+            const way = tourOrder.slice(1, -1).slice(0, maxWaypoints).map(i => {
+                const s = allSites[i];
+                return `${s.lat},${s.lon}`;
+            }).join('|');
+            const base = 'https://www.google.com/maps/dir/?api=1';
+            const params = new URLSearchParams({
+                origin: `${origin.lat},${origin.lon}`,
+                destination: `${dest.lat},${dest.lon}`,
+                travelmode: 'driving'
+            });
+            if (way) params.set('waypoints', way);
+            return base + '&' + params.toString();
+        }
+
+        function exportTourPDF(){
+            if (!tourOrder.length){
+                alert('Ajoute au moins 1 site à la tournée.');
+                return;
+            }
+            const now = new Date();
+            const {segs, total} = buildTourSegments(tourOrder);
+            const rows = tourOrder.map((idx, n) => {
+                const s = allSites[idx];
+                const d = (n < segs.length) ? segs[n].km.toFixed(1)+' km' : '';
+                return `<tr><td>${n+1}</td><td>${escapeHtml(s.site)}</td><td>${escapeHtml(s.ville)}</td><td>${escapeHtml(s.vallee||'')}</td><td>${escapeHtml(s.gu||'')}</td><td style="text-align:right">${d}</td></tr>`;
+            }).join('');
+
+            const win = window.open('', '_blank');
+            win.document.write(`
+                <!doctype html><html><head><meta charset="utf-8">
+                <title>Tournée EDF Hydro</title>
+                <style>
+                    body{font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; padding:20px;}
+                    h1{margin:0 0 4px}
+                    .muted{color:#555;margin:0 0 12px}
+                    table{width:100%;border-collapse:collapse;font-size:12px}
+                    th,td{border:1px solid #ddd;padding:8px;vertical-align:top}
+                    th{background:#f5f5f5;text-align:left}
+                    .right{text-align:right}
+                </style></head><body>
+                <h1>🧭 Tournée EDF Hydro</h1>
+                <p class="muted">${now.toLocaleString()} • ${tourOrder.length} sites • Total: ${total.toFixed(1)} km</p>
+                <table>
+                    <thead><tr><th>#</th><th>Site</th><th>Ville</th><th>Vallée</th><th>GU</th><th class="right">Vers suivant</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+                <p class="muted" style="margin-top:14px">Astuce: dans iOS, touche “Partager” ➜ “Imprimer” ➜ pinch-out ➜ “Partager” ➜ “Enregistrer dans Fichiers” (PDF).</p>
+                </body></html>
+            `);
+            win.document.close();
+            setTimeout(() => { win.print(); }, 350);
+        }
+
+        // ===== MINI MAP (v2) =====
+        const mapState = {
+            mode: 'vallee',
+            vallee: '',
+            gu: '',
+            scale: 1,
+            ox: 0, oy: 0,
+            dragging: false,
+            lastX: 0, lastY: 0,
+            pointers: new Map(),
+            lastPinchDist: 0
+        };
+
+        function unique(list){ return Array.from(new Set(list)).filter(Boolean).sort(); }
+
+        function fillMapSelects(){
+            const selV = document.getElementById('mapVallee');
+            const selG = document.getElementById('mapGU');
+            if (!selV || !selG) return;
+
+            const valleys = unique(allSites.map(s => s.vallee));
+            const gus = unique(allSites.map(s => s.gu));
+
+            selV.innerHTML = valleys.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+            selG.innerHTML = gus.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+
+            if (!mapState.vallee) mapState.vallee = valleys[0] || '';
+            if (!mapState.gu) mapState.gu = gus[0] || '';
+
+            selV.value = mapState.vallee;
+            selG.value = mapState.gu;
+        }
+
+        function getMapSites(){
+            if (mapState.mode === 'gu'){
+                return allSites.filter(s => s.gu === mapState.gu);
+            }
+            return allSites.filter(s => s.vallee === mapState.vallee);
+        }
+
+        function fitMap(){
+            mapState.scale = 1;
+            mapState.ox = 0;
+            mapState.oy = 0;
+            drawMiniMap();
+        }
+
+        function drawMiniMap(){
+            const canvas = document.getElementById('miniMapCanvas');
+            const hint = document.getElementById('mapHint');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            // handle hiDPI
+            const cssW = canvas.clientWidth || 900;
+            const cssH = canvas.clientHeight || 340;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.floor(cssW * dpr);
+            canvas.height = Math.floor(cssH * dpr);
+            ctx.setTransform(dpr,0,0,dpr,0,0);
+
+            const pts = getMapSites();
+            if (hint){
+                hint.textContent = `${pts.length} sites • Mode ${mapState.mode === 'gu' ? 'GU' : 'Vallée'}: ${mapState.mode === 'gu' ? mapState.gu : mapState.vallee}`;
+            }
+
+            ctx.clearRect(0,0,cssW,cssH);
+            // bg
+            ctx.fillStyle = 'rgba(0,0,0,.12)';
+            ctx.fillRect(0,0,cssW,cssH);
+
+            if (!pts.length){
+                ctx.fillStyle = 'rgba(255,255,255,.7)';
+                ctx.font = '14px -apple-system, BlinkMacSystemFont, Arial';
+                ctx.fillText('Aucun site à afficher', 16, 30);
+                return;
+            }
+
+            const lats = pts.map(p => p.lat);
+            const lons = pts.map(p => p.lon);
+            const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+            const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+            const pad = 20;
+
+            function project(p){
+                const x = (p.lon - minLon) / (maxLon - minLon || 1);
+                const y = 1 - (p.lat - minLat) / (maxLat - minLat || 1);
+                return {x: pad + x*(cssW-2*pad), y: pad + y*(cssH-2*pad)};
+            }
+
+            // apply pan/zoom around center
+            const cx = cssW/2, cy = cssH/2;
+
+            ctx.save();
+            ctx.translate(cx + mapState.ox, cy + mapState.oy);
+            ctx.scale(mapState.scale, mapState.scale);
+            ctx.translate(-cx, -cy);
+
+            // lines
+            ctx.strokeStyle = 'rgba(255,255,255,.08)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (const p of pts){
+                const pr = project(p);
+                ctx.moveTo(pr.x, pr.y);
+                ctx.arc(pr.x, pr.y, 0.01, 0, Math.PI*2);
+            }
+            ctx.stroke();
+
+            // points
+            for (const p of pts){
+                const pr = project(p);
+                ctx.fillStyle = (p.type || '').toLowerCase().includes('barrage') ? 'rgba(45,212,255,.95)' : 'rgba(255,255,255,.85)';
+                ctx.beginPath();
+                ctx.arc(pr.x, pr.y, 5, 0, Math.PI*2);
+                ctx.fill();
+            }
+
+            // labels (only if zoomed enough)
+            if (mapState.scale >= 1.15){
+                ctx.fillStyle = 'rgba(255,255,255,.9)';
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, Arial';
+                for (const p of pts){
+                    const pr = project(p);
+                    ctx.fillText(p.site, pr.x+8, pr.y+4);
+                }
+            }
+
+            ctx.restore();
+        }
+
+        function bindMiniMap(){
+            const canvas = document.getElementById('miniMapCanvas');
+            if (!canvas) return;
+
+            canvas.addEventListener('pointerdown', (e) => {
+                canvas.setPointerCapture(e.pointerId);
+                mapState.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+                mapState.lastX = e.clientX; mapState.lastY = e.clientY;
+            });
+
+            canvas.addEventListener('pointermove', (e) => {
+                if (!mapState.pointers.has(e.pointerId)) return;
+                const prev = mapState.pointers.get(e.pointerId);
+                mapState.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+                if (mapState.pointers.size === 1){
+                    const dx = e.clientX - prev.x;
+                    const dy = e.clientY - prev.y;
+                    mapState.ox += dx;
+                    mapState.oy += dy;
+                    drawMiniMap();
+                } else if (mapState.pointers.size === 2){
+                    const pts = Array.from(mapState.pointers.values());
+                    const dist = Math.hypot(pts[0].x-pts[1].x, pts[0].y-pts[1].y);
+                    if (!mapState.lastPinchDist) mapState.lastPinchDist = dist;
+                    const ratio = dist / (mapState.lastPinchDist || dist);
+                    mapState.scale = Math.max(0.6, Math.min(6, mapState.scale * ratio));
+                    mapState.lastPinchDist = dist;
+                    drawMiniMap();
+                }
+            });
+
+            function endPointer(e){
+                mapState.pointers.delete(e.pointerId);
+                if (mapState.pointers.size < 2) mapState.lastPinchDist = 0;
+            }
+            canvas.addEventListener('pointerup', endPointer);
+            canvas.addEventListener('pointercancel', endPointer);
+            canvas.addEventListener('dblclick', () => { mapState.scale = Math.min(6, mapState.scale*1.25); drawMiniMap(); });
+        }
+
+        function isModalOpen(id){
+            const m = document.getElementById(id);
+            return m && m.getAttribute('aria-hidden') === 'false';
+        }
+
+        // Extend escapeHtml (already defined earlier) guard
+        function escapeHtml(str){
+            return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+        }
+
+
+// ===== START =====
         document.addEventListener('DOMContentLoaded', init);
     </script>
 
@@ -542,5 +1085,129 @@
 })();
 </script>
 
+
+<div class="modalOverlay" id="modalOverlay"></div>
+
+<div class="modal" id="modalFavs" aria-hidden="true">
+  <div class="modalHeader">
+    <div>
+      <div class="modalTitle">⭐ Favoris</div>
+      <div class="smallHint">Tes sites favoris sont enregistrés sur cet iPhone (local).</div>
+    </div>
+    <button class="closeBtn" data-close="1" aria-label="Fermer">✕</button>
+  </div>
+  <div id="favsList"></div>
+</div>
+
+<div class="modal" id="modalHist" aria-hidden="true">
+  <div class="modalHeader">
+    <div>
+      <div class="modalTitle">🕘 Historique (10 derniers)</div>
+      <div class="smallHint">On enregistre les 10 dernières navigations (Waze/Google Maps).</div>
+    </div>
+    <button class="closeBtn" data-close="1" aria-label="Fermer">✕</button>
+  </div>
+  <div id="histList"></div>
+</div>
+
+
+        <div id="modalTour" class="modal" style="display:none">
+            <div class="modalCard">
+                <div class="modalHead">
+                    <div class="modalTitle">🧭 Tournée</div>
+                    <button class="iconBtn" data-close="modalTour">✕</button>
+                </div>
+                <div class="modalBody">
+                    <div class="hint">Ajoute des sites à ta tournée depuis la liste (bouton 🧭). Ici tu peux optimiser l'ordre, voir les distances et exporter en PDF.</div>
+
+                    <div class="tourCtl" style="margin-top:10px">
+                        <button id="btnTourOptimize">Optimiser</button>
+                        <button id="btnTourClear" class="danger">Vider</button>
+                        <button id="btnTourPDF">Exporter PDF</button>
+                        <button id="btnTourGMaps">Google Maps</button>
+                    </div>
+
+                    <div class="tourSummary" id="tourSummary"></div>
+                    <div id="tourList"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalMap" class="modal" style="display:none">
+            <div class="modalCard">
+                <div class="modalHead">
+                    <div class="modalTitle">🗺️ Mini-map</div>
+                    <button class="iconBtn" data-close="modalMap">✕</button>
+                </div>
+                <div class="modalBody">
+                    <div class="hint">Mini-map hors-ligne (sans tuiles). Zoom/pan au doigt.</div>
+
+                    <div class="mapToolbar">
+                        <select id="mapMode">
+                            <option value="vallee">Par Vallée</option>
+                            <option value="gu">Par GU</option>
+                        </select>
+                        <select id="mapVallee"></select>
+                        <select id="mapGU"></select>
+                        <button class="qb" id="btnMapFit">Recentrer</button>
+                    </div>
+
+                    <div class="canvasWrap">
+                        <canvas id="miniMapCanvas" width="900" height="700"></canvas>
+                    </div>
+
+                    <div class="hint" style="margin-top:10px" id="mapHint"></div>
+                </div>
+            </div>
+        </div>
+
 </body>
-</html>
+</html
+
+            // Quickbar (v2)
+            const qbFavs = document.getElementById('btnOpenFavs');
+            const qbHist = document.getElementById('btnOpenHist');
+            const qbTour = document.getElementById('btnOpenTour');
+            const qbMap  = document.getElementById('btnOpenMap');
+
+            qbFavs && qbFavs.addEventListener('click', () => { renderFavs(); openModal(modalFavs); });
+            qbHist && qbHist.addEventListener('click', () => { renderHist(); openModal(modalHist); });
+
+            qbTour && qbTour.addEventListener('click', () => { renderTour(); openModal(document.getElementById('modalTour')); });
+            qbMap  && qbMap.addEventListener('click',  () => {
+                fillMapSelects();
+                openModal(document.getElementById('modalMap'));
+                setTimeout(() => { drawMiniMap(); }, 50);
+            });
+
+            // Tour actions
+            const btnOpt = document.getElementById('btnTourOptimize');
+            const btnClr = document.getElementById('btnTourClear');
+            const btnPdf = document.getElementById('btnTourPDF');
+            const btnGm  = document.getElementById('btnTourGMaps');
+
+            btnOpt && btnOpt.addEventListener('click', optimizeTourNearest);
+            btnClr && btnClr.addEventListener('click', () => { if(confirm('Vider la tournée ?')) clearTour(); });
+            btnPdf && btnPdf.addEventListener('click', exportTourPDF);
+            btnGm  && btnGm.addEventListener('click', () => {
+                const url = tourToGMapsUrl();
+                if(!url){ alert('Ajoute au moins 2 sites à la tournée.'); return; }
+                window.open(url, '_blank');
+            });
+
+            // Map controls
+            const mapMode = document.getElementById('mapMode');
+            const mapVal  = document.getElementById('mapVallee');
+            const mapGU   = document.getElementById('mapGU');
+            const btnFit  = document.getElementById('btnMapFit');
+
+            mapMode && mapMode.addEventListener('change', (e) => {
+                mapState.mode = e.target.value;
+                drawMiniMap();
+            });
+            mapVal && mapVal.addEventListener('change', (e) => { mapState.vallee = e.target.value; drawMiniMap(); });
+            mapGU  && mapGU.addEventListener('change', (e) => { mapState.gu = e.target.value; drawMiniMap(); });
+            btnFit && btnFit.addEventListener('click', fitMap);
+
+            bindMiniMap();
+>
